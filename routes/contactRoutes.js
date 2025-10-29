@@ -1,17 +1,18 @@
 import express from "express";
 import Contact from "../models/contactModel.js";
+import { authenticate } from "../middleware/authMiddleware.js";
 
 const contactRoutes = express.Router();
 
-contactRoutes.post("/", async (req, res) => {
+contactRoutes.post("/", authenticate, async (req, res) => {
     try {
-        const { name, email, message } = req.body;
+        const { subject, message } = req.body;
 
-        if (!name || !email || !message) {
+        if (!subject || !message) {
             return res.status(400).json({ error: "All fields are required" });
         }
 
-        const newMessage = new Contact({ name, email, message });
+        const newMessage = new Contact({ subject, message });
         await newMessage.save();
 
         res.status(201).json({ success: true, message: "Message sent successfully" });

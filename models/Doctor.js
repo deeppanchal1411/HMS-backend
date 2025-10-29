@@ -1,42 +1,69 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
+const availabilitySchema = new mongoose.Schema({
+    day: {
+        type: String,
+        enum: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+        ],
+        required: true
+    },
+    startTime: {
+        type: String,
+        required: true
+    },
+    endTime: {
+        type: String,
+        required: true
+    }
+}, { _id: false });
+
 const doctorSchema = new mongoose.Schema({
     name: {
-        type:String,
-        required:true
+        type: String,
+        required: true
     },
     phone: {
-        type:String,
-        required:true,
-        unique:true
+        type: String,
+        required: true,
+        unique: true
     },
     specialization: {
-        type:String,
-        required:true
+        type: String,
+        required: true
     },
     experience: {
-        type:Number,
-        required:true
+        type: Number,
+        required: true
     },
     gender: {
-        type:String,
-        enum:["male", "female"],
-        required:true
+        type: String,
+        enum: ["male", "female"],
+        required: true
     },
     password: {
-        type:String,
-        required:true
+        type: String,
+        required: true
     },
     image: {
-        type:String
+        type: String
     },
     role: {
-        type:String,
-        default:"doctor"
-    }
+        type: String,
+        default: "doctor"
+    },
+
+    availability: [availabilitySchema]
+    
 }, {
-    timestamps:true
+    timestamps: true
 });
 
 // Hash password before saving

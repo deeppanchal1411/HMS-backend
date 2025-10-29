@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticate } from "../middleware/authMiddleware.js";
-import { getDoctorAppointments, getDoctorDashboard, getDoctorPatients, getDoctorProfile, getPatientHistory, loginDoctor, updateAppointmentNotes, updateAppointmentStatus, updateDoctorPassword, updateDoctorProfile } from "../controllers/doctorController.js";
+import { getDoctorAppointments, getDoctorAvailability, getDoctorDashboard, getDoctorPatients, getDoctorProfile, getPatientHistory, loginDoctor, updateAppointmentNotes, updateAppointmentStatus, updateDoctorAvailability, updateDoctorPassword, updateDoctorProfile } from "../controllers/doctorController.js";
 
 const doctorRoutes = express.Router();
 
@@ -11,6 +11,8 @@ doctorRoutes.post('/login', loginDoctor);
 doctorRoutes.get('/profile', authenticate, getDoctorProfile);
 doctorRoutes.put('/profile', authenticate, updateDoctorProfile);
 doctorRoutes.put('/update-password', authenticate, updateDoctorPassword);
+doctorRoutes.get('/availability', authenticate, getDoctorAvailability);
+doctorRoutes.put('/availability', authenticate, updateDoctorAvailability);
 
 // Appointments
 doctorRoutes.get('/appointments', authenticate, getDoctorAppointments);

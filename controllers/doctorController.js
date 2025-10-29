@@ -389,3 +389,49 @@ export const getDoctorPatients = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch patients" });
     }
 };
+
+
+export const getDoctorAvailability = async (req, res) => {
+    try {
+        const doctorId = req.loggedInUser.id;
+
+        const doctor = await Doctor.findById(doctorId).select("availability");
+
+        if (!doctor) {
+            return res.status(404).json({ message: "Doctor not found" });
+        }
+
+        res.status(200).json({ availability: doctor.availability });
+    } catch (err) {
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+
+export const updateDoctorAvailability = async (req, res) => {
+    try {
+        const doctorId = req.loggedInUser.id;
+        const { availability } = req.body;
+
+        if (!Array.isArray(availability)) {
+            return res.status(400).json({ message: "Availability must be an array" });
+        }
+
+        const updatedDoctor = await Doctor.findByIdAndUpdate(
+            doctorId,
+            { availability },
+            { new: true, runValidators: true }
+        ).select("availability");
+
+        if (!updatedDoctor) {
+            return res.status(404).json({ message: "Doctor not found" });
+        }
+
+        res.status(200).json({
+            message: "Availability updated successfully",
+            availability: updatedDoctor.availability
+        });
+    } catch (err) {
+        res.status(500).json({ error: "Server error" });
+    }
+};

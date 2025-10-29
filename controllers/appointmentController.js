@@ -148,3 +148,69 @@ export const cancelAppointment = async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 };
+
+
+function generateSlots(start, end, interval = 15) {
+    const slots = [];
+    const [startHour, startMin] = start.split(":").map(Number);
+    const [endHour, endMin] = end.split(":").map(Number);
+
+    let current = new Date(0, 0, 0, startHour, startMin);
+    const endTime = new Date(0, 0, 0, endHour, endMin);
+
+    while (current < endTime) {
+        const hours = current.getHours().toString().padStart(2, "0");
+        const minutes = current.getMinutes().toString().padStart(2, "0");
+        slots.push(`${hours}:${minutes}`);
+        current.setMinutes(current.getMinutes() + interval);
+    }
+
+    return slots;
+};
+
+export const getAvailableSlots = async (req, res) => {
+    try {
+        const { doctorId, date } = req.query;
+
+        if (!doctorId || !date) {
+            return res.status(400).json({ message: "Doctor ID and date are required" });
+        }
+
+        const doctor = await Doctor.findById(doctorId).select("availability");
+
+        if (!doctor) {
+            return res.status(404).json({ message: "Doctor not found" });
+        }
+
+        // Get the day of week (e.g., Monday)
+        const dayOfWeek = new Date(date).toLocaleDateString("en-US", { weekday: "long" });
+
+        // Find matching day in doctor's availability
+        const dayAvailability = doctor.availability.find(day => day.day === dayOfWeek);
+
+        if (!dayAvailability) {
+            return res.status(200).json({ slots: [] }); // Doctor not available that day
+        }
+
+        // Generate 15-minute slots between startTime and endTime
+        const allSlots = generateSlots(dayAvailability.startTime, dayAvailability.endTime);
+
+        // Fetch already booked appointments for that date
+        const appointments = await Appointment.find({
+            doctor: doctorId,
+            date,
+            status: { $ne: "cancelled" }
+        });
+
+        const bookedTimes = appointments.map(a => a.time); // Array of time strings like "10:15"
+
+        // Filter out booked slots
+        const availableSlots = allSlots.filter(slot => !bookedTimes.includes(slot));
+
+        res.status(200).json({ slots: availableSlots });
+
+    } catch (err) {
+        console.error("Error fetching available slots:", err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
