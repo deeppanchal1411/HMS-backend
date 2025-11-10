@@ -1,18 +1,13 @@
 import mongoose from "mongoose";
 
 const contactSchema = new mongoose.Schema({
-    subject: {
-        type: String,
-        required: true
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Patient", 
+        required: false
     },
-    message: {
-        type: String,
-        required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+    subject: { type: String, required: false },
+    message: { type: String, required: true },
+}, { timestamps: true });
 
 export default mongoose.model("Contact", contactSchema);

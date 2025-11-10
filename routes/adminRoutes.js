@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteDoctorByAdmin, deletePatient, getAdminProfile, getAdminStats, getAllAppointments, getAllDoctors, getAllPatients, loginAdmin, registerAdmin, updateAppointmentStatus, updateDoctorByAdmin } from "../controllers/adminController.js";
+import { deleteDoctorByAdmin, deletePatient, deletePatientContact, deletePublicContact, getAdminProfile, getAdminStats, getAllAppointments, getAllDoctors, getAllPatientContacts, getAllPatients, getAllPublicContacts, loginAdmin, registerAdmin, updateAppointmentStatus, updateDoctorByAdmin } from "../controllers/adminController.js";
 import { authenticate, isAdmin } from "../middleware/authMiddleware.js";
 import { registerDoctor } from "../controllers/doctorController.js";
 
@@ -30,5 +30,9 @@ adminRoutes.patch('/appointments/:id/status', authenticate, isAdmin, updateAppoi
 
 // AdminStats
 adminRoutes.get('/stats', authenticate, isAdmin, getAdminStats);
+adminRoutes.get('/contacts/public', authenticate, isAdmin, getAllPublicContacts);
+adminRoutes.delete('/contacts/public/:id', authenticate, isAdmin, deletePublicContact);
+adminRoutes.get('/contacts/patient', authenticate, isAdmin, getAllPatientContacts);
+adminRoutes.delete('/contacts/patient/:id', authenticate, isAdmin, deletePatientContact);
 
 export default adminRoutes;

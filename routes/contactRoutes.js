@@ -12,10 +12,16 @@ contactRoutes.post("/", authenticate, async (req, res) => {
             return res.status(400).json({ error: "All fields are required" });
         }
 
-        const newMessage = new Contact({ subject, message });
+        const newMessage = new Contact({
+            user: req.loggedInUser.id,
+            subject,
+            message,
+        });
+
         await newMessage.save();
 
         res.status(201).json({ success: true, message: "Message sent successfully" });
+
     } catch (err) {
         res.status(500).json({ error: "Server error" });
     }

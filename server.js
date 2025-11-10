@@ -8,6 +8,7 @@ import doctorRoutes from "./routes/doctorRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import publicRoutes from "./routes/publicRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
+import publicContactRoutes from "./routes/publicContactRoutes.js";
 
 
 dotenv.config();
@@ -24,6 +25,7 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/doctor', doctorRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/public/contact', publicContactRoutes);
 
 app.listen(process.env.PORT, () => {
     console.log("Server is running");

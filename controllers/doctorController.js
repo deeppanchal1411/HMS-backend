@@ -231,7 +231,7 @@ export const updateAppointmentStatus = async (req, res) => {
         const { status } = req.body;
 
         // Finds appointment by its ID
-        const appointment = await findById(appointmentId);
+        const appointment = await Appointment.findById(appointmentId);
 
         if (!appointment) {
             return res.status(404).json({ message: "Appointment not found" });
@@ -372,7 +372,7 @@ export const getPublicDoctors = async (req, res) => {
 
 export const getDoctorPatients = async (req, res) => {
     try {
-        const doctorId = req.user.id;
+        const doctorId = req.loggedInUser.id;
 
         const appointments = await Appointment.find({ doctor: doctorId }).populate("patient");
 
@@ -417,9 +417,14 @@ export const updateDoctorAvailability = async (req, res) => {
             return res.status(400).json({ message: "Availability must be an array" });
         }
 
+        const cleanedAvailability = availability.filter(
+            (slot) =>
+                slot.startTime && slot.endTime
+        );
+
         const updatedDoctor = await Doctor.findByIdAndUpdate(
             doctorId,
-            { availability },
+            { availability: cleanedAvailability },
             { new: true, runValidators: true }
         ).select("availability");
 

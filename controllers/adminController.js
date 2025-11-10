@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import Patient from "../models/Patient.js";
 import Appointment from "../models/Appointment.js";
+import Contact from "../models/contactModel.js";
+import PublicContact from "../models/PublicContact.js";
 
 export const registerAdmin = async (req, res) => {
     const { name, email, phone, password, role } = req.body;
@@ -348,15 +350,80 @@ export const getAdminStats = async (req, res) => {
             createdAt: { $gte: startOfDay, $lte: endOfDay }   // gte = greater than or equal  lte = less than or equal 
         });
 
+        const recentAppointments = await Appointment.find()
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .populate("patient", "name phone")
+            .populate("doctor", "name");
+
         res.status(200).json({
             totalPatients,
             totalDoctors,
             totalAppointments,
             todayAppointments,
-            statusCounts
+            statusCounts,
+            recentAppointments,
         });
 
     } catch (err) {
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+
+export const getAllPublicContacts = async (req, res) => {
+    try {
+        const contacts = await PublicContact.find().sort({ createdAt: -1 });
+        res.status(200).json({ contacts });
+
+    } catch (err) {
+        console.error("Error fetching public contacts:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+
+export const deletePublicContact = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedContact = await PublicContact.findByIdAndDelete(id);
+        if (!deletedContact) {
+            return res.status(404).json({ message: "Public contact not found" });
+        }
+        res.status(200).json({ message: "Public contact deleted successfully" });
+
+    } catch (err) {
+        console.error("Error deleting public contact:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+
+export const getAllPatientContacts = async (req, res) => {
+    try {
+        const contacts = await Contact.find()
+            .populate("user", "name email phone") 
+            .sort({ createdAt: -1 });
+        res.status(200).json({ contacts });
+
+    } catch (err) {
+        console.error("Error fetching patient contacts:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+
+export const deletePatientContact = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedContact = await Contact.findByIdAndDelete(id);
+        if (!deletedContact) {
+            return res.status(404).json({ message: "Patient contact not found" });
+        }
+        res.status(200).json({ message: "Patient contact deleted successfully" });
+        
+    } catch (err) {
+        console.error("Error deleting patient contact:", err);
         res.status(500).json({ error: "Server error" });
     }
 };
