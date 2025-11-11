@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import Appointment from "../models/Appointment.js";
 import Doctor from "../models/Doctor.js";
 
-// Create appointment
 export const createAppointment = async (req, res) => {
     try {
         const patientId = req.loggedInUser.id;
@@ -17,7 +16,6 @@ export const createAppointment = async (req, res) => {
             return res.status(404).json({ message: "Doctor not found" });
         }
 
-        // Creates new appointment
         const newAppointment = new Appointment({
             patient: patientId,
             doctor: doctorId,
@@ -28,10 +26,8 @@ export const createAppointment = async (req, res) => {
             symptoms
         });
 
-        // Saves appointment
         await newAppointment.save();
 
-        // Sends to frontend
         res.status(201).json({
             message: "Appointment booked successfully",
             appointment: newAppointment
@@ -43,13 +39,11 @@ export const createAppointment = async (req, res) => {
 };
 
 
-// Get all appointments and filter
 export const getMyAppointments = async (req, res) => {
     try {
         const patientId = req.loggedInUser.id;
-        const { date, time, status, doctorName } = req.query;  // Reads filters from query params
+        const { date, time, status, doctorName } = req.query;  
 
-        // Pass patient ID so patient only see their appointment
         const filter = { patient: patientId };
 
         if (date) {
@@ -66,19 +60,17 @@ export const getMyAppointments = async (req, res) => {
 
         if (doctorName) {
             const doctors = await Doctor.find({
-                name: { $regex: doctorName, $options: "i" }  // $regex => allows partial matching  "i" => makes it case-sensitive
-            }).select("_id");  // Selects doctor's ID
+                name: { $regex: doctorName, $options: "i" }  
+            }).select("_id");  
             const doctorIds = doctors.map(d => d._id);
             filter.doctor = { $in: doctorIds };
         }
 
-        // Finds and filter appointment
         const appointments = await Appointment.find(filter)
-            .sort({ date: 1, time: 1 })  // Sort by upcoming(ascending)
-            .populate("doctor", "name specialization") // Doctor info
-            .populate("patient", "name phone");  // Get basic patient info(from patient DB)
+            .sort({ date: 1, time: 1 })  
+            .populate("doctor", "name specialization") 
+            .populate("patient", "name phone"); 
 
-        // Sends to frontend
         res.status(200).json({ appointments });
 
     } catch (err) {
@@ -87,7 +79,6 @@ export const getMyAppointments = async (req, res) => {
 };
 
 
-// Upcoming-appintment
 export const getRecentAppointments = async (req, res) => {
     try {
         const patientId = new mongoose.Types.ObjectId(req.loggedInUser.id);
@@ -110,13 +101,11 @@ export const getRecentAppointments = async (req, res) => {
 };
 
 
-// Cancel appointment
 export const cancelAppointment = async (req, res) => {
     try {
         const patientId = req.loggedInUser.id;
         const appointmentId = req.params.id;
 
-        // Finds the appointment by its ID and loggedInUser's ID
         const appointment = await Appointment.findOne({
             _id: appointmentId,
             patient: patientId
@@ -134,11 +123,9 @@ export const cancelAppointment = async (req, res) => {
             return res.status(400).json({ message: "Appointment already cancelled" });
         }
 
-        // Sets the status of appoinntment to "cancelled"
         appointment.status = "cancelled";
         await appointment.save();
 
-        // Sends to frontend
         res.status(200).json({
             message: "Appointment cancelled successfully",
             appointment
@@ -182,29 +169,24 @@ export const getAvailableSlots = async (req, res) => {
             return res.status(404).json({ message: "Doctor not found" });
         }
 
-        // Get the day of week (e.g., Monday)
         const dayOfWeek = new Date(date).toLocaleDateString("en-US", { weekday: "long" });
 
-        // Find matching day in doctor's availability
         const dayAvailability = doctor.availability.find(day => day.day === dayOfWeek);
 
         if (!dayAvailability) {
-            return res.status(200).json({ slots: [] }); // Doctor not available that day
+            return res.status(200).json({ slots: [] });
         }
 
-        // Generate 15-minute slots between startTime and endTime
         const allSlots = generateSlots(dayAvailability.startTime, dayAvailability.endTime);
 
-        // Fetch already booked appointments for that date
         const appointments = await Appointment.find({
             doctor: doctorId,
             date,
             status: { $ne: "cancelled" }
         });
 
-        const bookedTimes = appointments.map(a => a.time); // Array of time strings like "10:15"
+        const bookedTimes = appointments.map(a => a.time);
 
-        // Filter out booked slots
         const availableSlots = allSlots.filter(slot => !bookedTimes.includes(slot));
 
         res.status(200).json({ slots: availableSlots });

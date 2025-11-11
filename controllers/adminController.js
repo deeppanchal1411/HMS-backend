@@ -12,19 +12,17 @@ export const registerAdmin = async (req, res) => {
     const { name, email, phone, password, role } = req.body;
 
     try {
-        // Check if admin already exists
         const existingAdmin = await Admin.findOne({ phone });
         if (existingAdmin) {
             return res.status(400).json({ message: "Admin already exists with this phone number" });
         }
 
-        // Create new admin
         const newAdmin = new Admin({
             name,
             email,
             phone,
             password,
-            role: role || 'admin'  // default role if not provided
+            role: role || 'admin' 
         });
 
         await newAdmin.save();
@@ -47,12 +45,10 @@ export const registerAdmin = async (req, res) => {
 };
 
 
-// Login for admin
 export const loginAdmin = async (req, res) => {
     const { phone, password } = req.body;
 
     try {
-        // Checks the admin
         const admin = await Admin.findOne({ phone });
         if (!admin) {
             return res.status(400).json({ message: "Admin not found" });
@@ -61,21 +57,18 @@ export const loginAdmin = async (req, res) => {
         console.log("Password from request:", password);
         console.log("Hashed password from DB:", admin.password);
 
-        // Compares the password
         const isMatch = await bcrypt.compare(password, admin.password);
         console.log("Password match result:", isMatch);
         if (!isMatch) {
             return res.status(401).json({ message: "Invalid password" });
         }
 
-        // Creates token 
         const token = jwt.sign(
-            { id: admin._id, role: admin.role },  // Payload
-            process.env.JWT_SECRET,  // Secret
-            { expiresIn: "2h" }  // Options
+            { id: admin._id, role: admin.role }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: "2h" }  
         );
-
-        // Sends response to frontend   
+  
         res.status(200).json({
             message: "Login successful",
             token,
@@ -93,12 +86,10 @@ export const loginAdmin = async (req, res) => {
 };
 
 
-// Gets a profile of an admin
 export const getAdminProfile = async (req, res) => {
     try {
         const adminId = req.loggedInUser.id;
 
-        // Finds the admin by id and select all data except password
         const admin = await Admin.findById(adminId).select("-password");
 
         if (!admin) {
@@ -113,13 +104,10 @@ export const getAdminProfile = async (req, res) => {
 };
 
 
-// Gets all doctors
 export const getAllDoctors = async (req, res) => {
-    try {
-        // Finds all doctors and select all data except password 
+    try { 
         const doctors = await Doctor.find().select("-password");
 
-        // Sends response to frontend
         res.status(200).json({ doctors });
 
     } catch (err) {
@@ -128,16 +116,13 @@ export const getAllDoctors = async (req, res) => {
 };
 
 
-// Edit doctor profile
 export const updateDoctorByAdmin = async (req, res) => {
     try {
-        // Gets id from URL
         const doctorId = req.params.id;
         const { name, phone, specialization, experience, gender } = req.body;
 
         const updatedData = { name, phone, specialization, experience, gender };
 
-        // Finds the doctor by ID and updates
         const updatedDoctor = await Doctor.findByIdAndUpdate(
             doctorId,
             updatedData,
@@ -148,7 +133,6 @@ export const updateDoctorByAdmin = async (req, res) => {
             return res.status(404).json({ message: "Doctor not found" });
         }
 
-        // Sends the updated response to frontend
         res.status(200).json({
             message: "Doctor updated successfully",
             doctor: updatedDoctor
@@ -160,20 +144,16 @@ export const updateDoctorByAdmin = async (req, res) => {
 };
 
 
-// Delete doctor
 export const deleteDoctorByAdmin = async (req, res) => {
     try {
-        // Gets ID from URL
         const doctorId = req.params.id;
 
-        // Finds doctor by ID and delete
         const deletedDoctor = await Doctor.findByIdAndDelete(doctorId);
 
         if (!deletedDoctor) {
             return res.status(404).json({ message: "Doctor not found" });
         }
 
-        // Send response to frontend
         res.status(200).json({
             message: "Doctor deleted successfully",
             doctor: {
@@ -189,18 +169,15 @@ export const deleteDoctorByAdmin = async (req, res) => {
 };
 
 
-// Gets all patients
 export const getAllPatients = async (req, res) => {
     try {
-        // Extracts values from URL
         const { search, sortBy = "name", order = "asc" } = req.query;
 
         const query = {};
 
-        // If search in URl ($or = either condition can be true)
         if (search) {
             query.$or = [
-                { name: { $regex: search, $options: "i" } },  // i = case-sensitive
+                { name: { $regex: search, $options: "i" } },  
                 { phone: { $regex: search, $options: "i" } }
             ];
         }
@@ -220,7 +197,6 @@ export const getAllPatients = async (req, res) => {
 };
 
 
-// Deletes Patient
 export const deletePatient = async (req, res) => {
     try {
         const patientId = req.params.id;
@@ -239,7 +215,6 @@ export const deletePatient = async (req, res) => {
 };
 
 
-// Gets all appointments
 export const getAllAppointments = async (req, res) => {
     try {
         const { search, doctorId, status, sortBy = "date", order = "asc" } = req.query;
@@ -292,7 +267,6 @@ export const getAllAppointments = async (req, res) => {
 };
 
 
-// Updates status of an appointment
 export const updateAppointmentStatus = async (req, res) => {
     try {
         const { id } = req.params;
@@ -319,16 +293,13 @@ export const updateAppointmentStatus = async (req, res) => {
 };
 
 
-// Shows statistics
 export const getAdminStats = async (req, res) => {
     try {
         const totalPatients = await Patient.countDocuments();
         const totalDoctors = await Doctor.countDocuments();
         const totalAppointments = await Appointment.countDocuments();
 
-        // Uses mongoDB aggregation function
         const statusCounts = await Appointment.aggregate([
-            // For each group counts 
             {
                 $group: {
                     _id: "$status",
@@ -337,17 +308,14 @@ export const getAdminStats = async (req, res) => {
             }
         ]);
 
-        // Sets time fot start day
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
 
-        // Sets time for end day
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
 
-        // Counts appointment of today
         const todayAppointments = await Appointment.countDocuments({
-            createdAt: { $gte: startOfDay, $lte: endOfDay }   // gte = greater than or equal  lte = less than or equal 
+            createdAt: { $gte: startOfDay, $lte: endOfDay }   
         });
 
         const recentAppointments = await Appointment.find()
