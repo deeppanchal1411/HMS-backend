@@ -59,9 +59,9 @@ export const loginDoctor = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: doctor._id, role: doctor.role },  
-            process.env.JWT_SECRET,  
-            { expiresIn: "2h" }  
+            { id: doctor._id, role: doctor.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "2h" }
         );
 
         res.status(200).json({
@@ -148,7 +148,7 @@ export const updateDoctorPassword = async (req, res) => {
         }
 
         doctor.password = newPassword;
-        await doctor.save();   
+        await doctor.save();
 
         return res.status(200).json({ message: "Password updated successfully" });
 
@@ -161,7 +161,7 @@ export const updateDoctorPassword = async (req, res) => {
 export const getDoctorAppointments = async (req, res) => {
     try {
         const doctorId = req.loggedInUser.id;
-        const { date, time, status, patientName } = req.query;  
+        const { date, time, status, patientName } = req.query;
 
         const filter = { doctor: doctorId };
 
@@ -181,16 +181,16 @@ export const getDoctorAppointments = async (req, res) => {
 
         if (patientName) {
             const matchedPatients = await Patient.find({
-                name: { $regex: patientName, $options: "i" }  
-            }).select("_id");  
+                name: { $regex: patientName, $options: "i" }
+            }).select("_id");
 
             const matchIds = matchedPatients.map(p => p._id);
             filter.Patient = { $in: matchIds };
         }
 
         const appointments = await Appointment.find(filter)
-            .sort({ date: 1, time: 1 })  
-            .populate("patient", "name email phone age gender"); 
+            .sort({ date: 1, time: 1 })
+            .populate("patient", "name email phone age gender");
 
         res.status(200).json({ appointments });
 
@@ -257,12 +257,18 @@ export const getDoctorDashboard = async (req, res) => {
             date: today
         });
 
+        const recentAppointments = await Appointment.find({ doctor: doctorId })
+            .sort({ dateTime: -1 })     
+            .limit(5)                   
+            .populate("patient", "name phone");
+
         res.status(200).json({
             totalAppointments,
             pendingAppointments,
             completedAppointments,
             cancelledAppointments,
-            todayAppointments
+            todayAppointments,
+            recentAppointments
         });
 
     } catch (err) {
@@ -288,7 +294,7 @@ export const updateAppointmentNotes = async (req, res) => {
         }
 
         appointment.notes = notes;
-        await appointment.save();  
+        await appointment.save();
 
         res.status(200).json({
             message: "Notes updated",
@@ -309,7 +315,7 @@ export const getPatientHistory = async (req, res) => {
         const history = await Appointment.find({
             doctor: doctorId,
             patient: patientId,
-        }).sort({ date: -1, time: -1 }) 
+        }).sort({ date: -1, time: -1 })
             .select("date time status notes")
             .populate("patient", "name email age gender phone");
 
